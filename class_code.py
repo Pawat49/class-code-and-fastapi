@@ -116,8 +116,7 @@ class Operation_Staff(Staff):
             discount_value, total_services, net_amount
         )
         
-        print(f"Invoice Created by {self._Profile__name}")
-        print(new_invoice)
+        
         return new_invoice
 
 class User(Profile):
