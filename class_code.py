@@ -2,6 +2,12 @@ from fastapi import FastAPI
 from abc import ABC, abstractmethod
 import datetime
 
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 class Dorm:
     def __init__(self, name):
         self.__name = name
@@ -201,6 +207,5 @@ def test():
         discount_obj=discount_obj
     )
     print("="*70)
-
 if __name__ == "__main__":
-    test()
+        test()
