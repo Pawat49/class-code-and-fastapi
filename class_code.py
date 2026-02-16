@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from abc import ABC, abstractmethod
-import datetime
+from enum import Enum
+from datetime import date
 
 app = FastAPI()
 
@@ -30,45 +31,137 @@ class Dorm:
                 return os
         return None
 
-class Profile(ABC):
-    def __init__(self, profile_id, name, email, phone_number):
-        self.__profile_id = profile_id
+class User:
+    def __init__(self,name,id, email, phone_number):
         self.__name = name
-        self.__profile_image = None
+        self.__id = id
         self.__email = email
         self.__phone_number = phone_number
-        self.__date_create = datetime.datetime.now()
-        self.__last_login = datetime.datetime.now()
-        self.__general_data = ""
-        self.__password = ""
+        self.__strike = 0
 
+    # get User artibute
     @property
-    def special_condition(self):
-        return getattr(self, '_Resident__special_condition', None)
+    def name(self):
+        return self.__name
+    
+    @property
+    def id(self):
+        return self.__id
     
     @property
     def email(self):
         return self.__email
     
     @property
-    def password(self):
-        return self.__password
+    def phone_number(self):
+        return self.__phone_number
 
-    def password_setting(self, password):
-        self.__password = password
+    #method User
+    def request_booking_room(self,user_id, sign_contract_time, building, room_id):
+        pass
 
-class Staff(Profile):
-    # FIX 1: Fixed super() init arguments
-    def __init__(self, staff_id, name, email, phone_number, building_responsibility, role_id):
-        # Only pass the arguments that Profile expects
-        super().__init__(staff_id, name, email, phone_number)
+    def show_booking_status(self,book):
+        pass
+
+    def send_contract_info(self):
+        pass
+
+    def cancel_booking(self,book):
+        pass
+
+class AccountStatus(Enum):
+    Applicant = 1
+
+    Active = 2
+    
+    Suspended = 3
+    
+    Closed = 4
+
+class Resident(User):
+    def __init__(self,name,id, email, phone_number):
+        super().__init__(name,id, email, phone_number)
+        self.__move_in_date = date.today()
+        self.__booking_list = []
+        self.__discount_list = []
+        self.__invoice_list = []
+        self.__payment = None
+        self.__receipt_list = []
+        self.__status = AccountStatus.Active.name
+
+    # get Resident artibute (Resident สืบทอดมาจาก User ทำให้ get artibute name,id,email,phone_number ได้เหมือนกัน)
+    def move_in_date(self):
+        return self.__move_in_date
+    
+    def status(self):
+        return self.__status
+
+    # method Resident
+    def request_maintanance(self):
+        pass
+
+    def cancel_maintenance(self,mt):
+        pass
+
+    def show_maintenance_ticket(self):
+        pass
+
+    def cancel_contract(self,contract):
+        pass
+
+class Staff:
+    def __init__(self,building_responsibility,role_id):
         self.__building_responsibility = building_responsibility
         self.__role_id = role_id
 
+    #get artibute Staff
+    @property
+    def building_responsibility(self):
+        return self.__building_responsibility
+    
+    @property
+    def role_id(self):
+        return self.__role_id
+    
+    #method Staff
+    def logout(self):
+        pass
+
+class Operation_Staff(Staff):
+    
+    # FIX 2: Fixed calculation logic to return numbers, not Objects
+    def calculate_net_amount(self, total_cost, discount_cost):
+        return total_cost - discount_cost
+
+    def create_invoice(self,resident_info, invoice_type, room_cost, electricity_cost, water_cost, 
+                       parking_slot_cost, share_facility_cost, maintenance_cost):
+        
+        # 1. Sum up all costs
+        total_services = (room_cost + electricity_cost + water_cost + 
+                          parking_slot_cost + share_facility_cost + maintenance_cost)
+        
+        # 2. Calculate Discount Value
+        
+
+        # 3. Calculate Net Amount
+        net_amount = self.calculate_net_amount(total_services)
+        
+        # 4. Create and Return the Invoice Object
+        new_invoice = Invoice(
+            invoice_type, room_cost, electricity_cost, water_cost, 
+            parking_slot_cost, share_facility_cost, maintenance_cost, 
+            total_services, net_amount
+        )
+        
+        
+        return new_invoice
+    
+
 class Invoice:
-    def __init__(self, invoice_type, room_cost, electricity_cost, water_cost, 
+    def __init__(self,resident_info, invoice_type, room_cost, electricity_cost, water_cost, 
                  parking_slot_cost, share_facility_cost, maintenance_cost, 
-                 discount_cost, total_before_discount, net_amount):
+                 total_before_discount, net_amount):
+        self.__resident_info = resident_info
         self.__invoice_type = invoice_type
         self.__room_cost = room_cost
         self.__electricity_cost = electricity_cost
@@ -76,7 +169,6 @@ class Invoice:
         self.__parking_slot_cost = parking_slot_cost
         self.__share_facility_cost = share_facility_cost
         self.__maintenance_cost = maintenance_cost
-        self.__discount_cost = discount_cost
         self.__total_before_discount = total_before_discount
         self.__net_amount = net_amount
 
@@ -85,55 +177,6 @@ class Invoice:
                 f"Type: {self.__invoice_type}\n"
                 f"Discount Applied: {self.__discount_cost}\n"
                 f"Net Amount To Pay: {self.__net_amount}")
-
-class Operation_Staff(Staff):
-    
-    # FIX 2: Fixed calculation logic to return numbers, not Objects
-    def calculate_net_amount(self, total_cost, discount_cost):
-        return total_cost - discount_cost
-
-    def create_invoice(self, invoice_type, room_cost, electricity_cost, water_cost, 
-                       parking_slot_cost, share_facility_cost, maintenance_cost, discount_obj):
-        
-        # 1. Sum up all costs
-        total_services = (room_cost + electricity_cost + water_cost + 
-                          parking_slot_cost + share_facility_cost + maintenance_cost)
-        
-        # 2. Calculate Discount Value
-        if discount_obj:
-            # We calculate how much money is actually deducted based on the total or specific rules
-            discount_value = discount_obj.calculate_discount(room_cost) 
-        else:
-            discount_value = 0
-
-        # 3. Calculate Net Amount
-        net_amount = self.calculate_net_amount(total_services, discount_value)
-        
-        # 4. Create and Return the Invoice Object
-        new_invoice = Invoice(
-            invoice_type, room_cost, electricity_cost, water_cost, 
-            parking_slot_cost, share_facility_cost, maintenance_cost, 
-            discount_value, total_services, net_amount
-        )
-        
-        print(f"Invoice Created by {self._Profile__name}")
-        print(new_invoice)
-        return new_invoice
-
-class User(Profile):
-    def __init__(self, profile_id, name, email, phone_number):
-        super().__init__(profile_id, name, email, phone_number)
-        self.__record_list = []
-        self.__invoice_list = []
-
-class Resident(User):
-    def __init__(self, profile_id, name, email, phone_number):
-        super().__init__(profile_id, name, email, phone_number)
-        self.__special_condition = "STUDENT" # Fixed typo: speacial -> special
-    
-    @property
-    def special_condition(self):
-        return self.__special_condition
 
 # --- Discount Logic Refactored ---
 
@@ -159,16 +202,19 @@ class Discount(ABC):
 class Student_Discount(Discount):
     # นักศึกษา: ลดค่าเช่า 3% (ต้องยืนยันสถานะทุกเทอม)
     # องค์กร: ลดค่าเช่า 8% แต่ขั้นต่ำ 5 ห้อง และสัญญารายปี
+    @staticmethod
     def calculate_discount(self, room_cost):
         return room_cost * 0.03
 
 class Early_Discount(Discount):
     # ชำระบิลก่อนวันที่ 5 ของเดือน ลดค่าบริการส่วนกลาง 100 บาท
+    @staticmethod
     def calculate_discount(self, target_amount=0):
         return 100
 
 class Long_Term_Discount(Discount):
     # ทำสัญญา 12 เดือน ลดค่าเช่า 5% ตลอดสัญญา
+    @staticmethod
     def calculate_discount(self, room_cost):
         return room_cost * 0.05
 
@@ -197,6 +243,7 @@ def test():
     # 4. Create Invoice
     # We pass the discount object into the function
     gonginwzaa.create_invoice(
+        kenny,
         invoice_type="normal",
         room_cost=6500,
         electricity_cost=500,
