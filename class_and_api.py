@@ -110,7 +110,7 @@ class Dorm:
                 return resident
         return None
 
-    # --- 2. Search Building ---
+    # --- 2. Search Building --
     def search_building_by_id(self, building_id):
         for building in self.__building_list:
             if building.id == building_id:
